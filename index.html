@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bluetooth Key</title>
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+
+    <!-- iOS 支持 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="BT Key">
+    <meta name="theme-color" content="#4285f4">
+
+    <!-- 图标 (iOS) -->
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <style>
+        /* 此处保持原有的 CSS 不变 */
+        :root {
+            --primary-color: #4285f4;
+            --success-color: #0f9d58;
+            --danger-color: #db4437;
+            --warning-color: #f4b400;
+            --light-bg: #f8f9fa;
+            --dark-text: #333;
+            --light-text: #757575;
+            --border-color: #ddd;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            line-height: 1.6;
+            color: var(--dark-text);
+            background-color: #ffe599;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            /* 防止移动端下拉刷新影响体验 */
+            overscroll-behavior-y: contain;
+        }
+
+        .app {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        .box {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 400px;
+            padding: 40px;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.5);
+            box-sizing: border-box;
+            box-shadow: 0 15px 25px rgba(0, 0, 0, 0.6);
+            border-radius: 10px;
+            z-index: 5;
+        }
+
+        .box h2 {
+            margin: 0 0 30px;
+            padding: 0;
+            color: #fff;
+            text-align: center;
+        }
+
+        .box .user-box {
+            position: relative;
+        }
+
+        .box .user-box input {
+            width: 100%;
+            padding: 10px 0;
+            font-size: 16px;
+            color: #fff;
+            margin-bottom: 30px;
+            border: none;
+            border-bottom: 1px solid #fff;
+            outline: none;
+            background: transparent;
+        }
+
+        .box .user-box label {
+            position: absolute;
+            top: 0;
+            left: 0;
+            padding: 10px 0;
+            font-size: 16px;
+            color: #fff;
+            pointer-events: none;
+            transition: 0.5s;
+        }
+
+        .box .user-box input:focus~label,
+        .box .user-box input:valid~label,
+        .box .user-box input.has-value~label {
+            top: -20px;
+            left: 0;
+            color: #03e9f4;
+            font-size: 12px;
+        }
+
+        button[type="submit"] {
+            background-color: #94d82d;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            margin-top: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #69db7c;
+        }
+
+        .config {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .config button {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid #ddd;
+            background: white;
+            padding: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .config button svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .open-box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .round-button {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background-color: #94d82d;
+            border: none;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 20px rgba(148, 216, 45, 0.5);
+            /* 禁用 iOS 点击高亮 */
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        button {
+            transition: transform 0.1s ease, background-color 0.3s;
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        .round-button:hover {
+            background-color: #69db7c;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid #fff;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 8px;
+            display: none;
+        }
+
+        .spinner.active {
+            display: block;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 768px) {
+            .box {
+                width: 90%;
+                max-width: 400px;
+                padding: 20px;
+            }
+
+            .box h2 {
+                margin-bottom: 20px;
+            }
+
+            .box .user-box input {
+                margin-bottom: 20px;
+            }
+
+            .box .user-box input:focus~label,
+            .box .user-box input:valid~label,
+            .box .user-box input.has-value~label {
+                top: -18px;
+            }
+        }
+
+        @media (max-width: 480px) {
+
+            .box .user-box input:focus~label,
+            .box .user-box input:valid~label,
+            .box .user-box input.has-value~label {
+                top: -15px;
+                font-size: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="app">
+        <div class="config">
+            <button id="toggleConfigBtn" title="Toggle Settings">
+                <svg viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M539.4 550.9m-164.7 0a164.7 164.7 0 1 0 329.4 0 164.7 164.7 0 1 0-329.4 0Z" fill="#FFB89A">
+                    </path>
+                    <path
+                        d="M679.3 405.4c-8.9-14-27.4-18.2-41.4-9.3-14 8.9-18.2 27.4-9.3 41.4 14 22.1 21.4 47.7 21.4 74 0 16.6 13.4 30 30 30s30-13.4 30-30c0-37.7-10.6-74.4-30.7-106.1z"
+                        fill="#33CC99"></path>
+                    <path
+                        d="M607.4 611.4c-25.9 24.9-60 38.6-96 38.6-76.4 0-138.5-62.1-138.5-138.5S435 373 511.4 373c22.9 0 44.7 5.4 64.8 16 14.6 7.8 32.8 2.2 40.6-12.5 7.8-14.6 2.2-32.8-12.5-40.6-28.4-15.1-60.5-23-92.9-23-109.5 0-198.5 89.1-198.5 198.5C312.9 620.9 402 710 511.5 710c51.5 0 100.4-19.7 137.5-55.4 11.9-11.5 12.3-30.5 0.8-42.4-11.4-11.9-30.4-12.3-42.4-0.8z"
+                        fill="#33CC99"></path>
+                    <path
+                        d="M853.7 370.4c-17.4-42.2-14.2-90.5 7.7-138.6a448.25 448.25 0 0 0-68.7-69c-48.2 21.8-96.6 24.9-138.8 7.4-42.3-17.6-74.3-54.2-92.8-104-16.4-1.8-33-2.7-49.8-2.7-15.9 0-31.6 0.8-47.1 2.5-18.7 49.8-50.7 86.4-93.1 104-42.5 17.6-91.2 14.1-139.7-8.2-25.2 20.2-48.1 43-68.4 68.1 22.3 48.6 25.6 97.3 7.9 139.9-17.7 42.6-54.6 74.6-104.9 93.1-1.7 16-2.6 32.3-2.6 48.7 0 16.1 0.9 32 2.5 47.6 50.2 18.6 87.1 50.8 104.7 93.4 17.6 42.6 14.1 91.3-8.2 139.9 20.2 25.1 43.1 48 68.3 68.3 48.6-22.2 97.3-25.5 139.8-7.8 42.4 17.6 74.3 54.3 92.9 104.2 15.8 1.7 31.9 2.6 48.2 2.6 16.5 0 32.7-0.9 48.7-2.6 18.7-49.8 50.7-86.3 93.1-103.8 42.2-17.4 90.6-14.2 138.8 7.7 25.4-20.4 48.5-43.5 68.9-68.9-21.8-48.2-24.9-96.5-7.3-138.7 17.5-42.1 53.9-74 103.3-92.5 1.8-16.2 2.7-32.7 2.7-49.3 0-16.3-0.9-32.4-2.6-48.2-49.8-19-86-50.9-103.5-93.1zM798 630.3c-21.8 52.5-21 110.8 0.6 168.3-57.5-21.7-115.8-22.7-168.3-1-52.6 21.7-93.2 63.5-118.6 119.4-25.3-56-65.8-97.9-118.3-119.7-25.8-10.7-53.1-16-80.9-16-28.8 0-58.2 5.6-87.4 16.6 21.7-57.5 22.7-115.8 1-168.3-21.7-52.6-63.5-93.2-119.4-118.6 56-25.3 97.9-65.8 119.7-118.3 21.8-52.5 21-110.8-0.6-168.3 29.4 11.1 59 16.8 87.9 16.8 27.7 0 54.7-5.2 80.4-15.8 52.6-21.7 93.2-63.5 118.6-119.4 25.3 56 65.8 97.9 118.3 119.7 52.5 21.8 110.8 21 168.3-0.6-21.7 57.5-22.7 115.8-1 168.3C820 446 861.8 486.6 917.7 512c-56 25.2-97.9 65.7-119.7 118.3z"
+                        fill="#45484C"></path>
+                </svg>
+            </button>
+        </div>
+
+        <div id="configView" class="box">
+            <h2>Config</h2>
+            <form id="configForm">
+                <div class="user-box">
+                    <input type="text" id="macInput" required>
+                    <label>MAC Address</label>
+                </div>
+                <div class="user-box">
+                    <input type="text" id="keyInput" required>
+                    <label>Key</label>
+                </div>
+                <div class="user-box">
+                    <input type="text" id="namePrefixInput" required>
+                    <label>Bluetooth Name</label>
+                </div>
+                <button type="submit">
+                    <span>Save</span>
+                </button>
+            </form>
+        </div>
+
+        <div id="openView" class="open-box hidden">
+            <button class="round-button" id="testBtn">
+                <span id="connectSpinner" class="spinner"></span>
+                <span id="btnText">TEST</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // 0. 极简 DES 实现
+        // ==========================================
+        const MiniDES = (() => {
+            // DES 标准置换表 (Standard Tables)
+            const IP = [58, 50, 42, 34, 26, 18, 10, 2, 60, 52, 44, 36, 28, 20, 12, 4, 62, 54, 46, 38, 30, 22, 14, 6, 64, 56, 48, 40, 32, 24, 16, 8, 57, 49, 41, 33, 25, 17, 9, 1, 59, 51, 43, 35, 27, 19, 11, 3, 61, 53, 45, 37, 29, 21, 13, 5, 63, 55, 47, 39, 31, 23, 15, 7];
+            const FP = [40, 8, 48, 16, 56, 24, 64, 32, 39, 7, 47, 15, 55, 23, 63, 31, 38, 6, 46, 14, 54, 22, 62, 30, 37, 5, 45, 13, 53, 21, 61, 29, 36, 4, 44, 12, 52, 20, 60, 28, 35, 3, 43, 11, 51, 19, 59, 27, 34, 2, 42, 10, 50, 18, 58, 26, 33, 1, 41, 9, 49, 17, 57, 25];
+            const E = [32, 1, 2, 3, 4, 5, 4, 5, 6, 7, 8, 9, 8, 9, 10, 11, 12, 13, 12, 13, 14, 15, 16, 17, 16, 17, 18, 19, 20, 21, 20, 21, 22, 23, 24, 25, 24, 25, 26, 27, 28, 29, 28, 29, 30, 31, 32, 1];
+            const P = [16, 7, 20, 21, 29, 12, 28, 17, 1, 15, 23, 26, 5, 18, 31, 10, 2, 8, 24, 14, 32, 27, 3, 9, 19, 13, 30, 6, 22, 11, 4, 25];
+            const S = [
+                [14, 4, 13, 1, 2, 15, 11, 8, 3, 10, 6, 12, 5, 9, 0, 7, 0, 15, 7, 4, 14, 2, 13, 1, 10, 6, 12, 11, 9, 5, 3, 8, 4, 1, 14, 8, 13, 6, 2, 11, 15, 12, 9, 7, 3, 10, 5, 0, 15, 12, 8, 2, 4, 9, 1, 7, 5, 11, 3, 14, 10, 0, 6, 13],
+                [15, 1, 8, 14, 6, 11, 3, 4, 9, 7, 2, 13, 12, 0, 5, 10, 3, 13, 4, 7, 15, 2, 8, 14, 12, 0, 1, 10, 6, 9, 11, 5, 0, 14, 7, 11, 10, 4, 13, 1, 5, 8, 12, 6, 9, 3, 2, 15, 13, 8, 10, 1, 3, 15, 4, 2, 11, 6, 7, 12, 0, 5, 14, 9],
+                [10, 0, 9, 14, 6, 3, 15, 5, 1, 13, 12, 7, 11, 4, 2, 8, 13, 7, 0, 9, 3, 4, 6, 10, 2, 8, 5, 14, 12, 11, 15, 1, 13, 6, 4, 9, 8, 15, 3, 0, 11, 1, 2, 12, 5, 10, 14, 7, 1, 10, 13, 0, 6, 9, 8, 7, 4, 15, 14, 3, 11, 5, 2, 12],
+                [7, 13, 14, 3, 0, 6, 9, 10, 1, 2, 8, 5, 11, 12, 4, 15, 13, 8, 11, 5, 6, 15, 0, 3, 4, 7, 2, 12, 1, 10, 14, 9, 10, 6, 9, 0, 12, 11, 7, 13, 15, 1, 3, 14, 5, 2, 8, 4, 3, 15, 0, 6, 10, 1, 13, 8, 9, 4, 5, 11, 12, 7, 2, 14],
+                [2, 12, 4, 1, 7, 10, 11, 6, 8, 5, 3, 15, 13, 0, 14, 9, 14, 11, 2, 12, 4, 7, 13, 1, 5, 0, 15, 10, 3, 9, 8, 6, 4, 2, 1, 11, 10, 13, 7, 8, 15, 9, 12, 5, 6, 3, 0, 14, 11, 8, 12, 7, 1, 14, 2, 13, 6, 15, 0, 9, 10, 4, 5, 3],
+                [12, 1, 10, 15, 9, 2, 6, 8, 0, 13, 3, 4, 14, 7, 5, 11, 10, 15, 4, 2, 7, 12, 9, 5, 6, 1, 13, 14, 0, 11, 3, 8, 9, 14, 15, 5, 2, 8, 12, 3, 7, 0, 4, 10, 1, 13, 11, 6, 4, 3, 2, 12, 9, 5, 15, 10, 11, 14, 1, 7, 6, 0, 8, 13],
+                [4, 11, 2, 14, 15, 0, 8, 13, 3, 12, 9, 7, 5, 10, 6, 1, 13, 0, 11, 7, 4, 9, 1, 10, 14, 3, 5, 12, 2, 15, 8, 6, 1, 4, 11, 13, 12, 3, 7, 14, 10, 15, 6, 8, 0, 5, 9, 2, 6, 11, 13, 8, 1, 4, 10, 7, 9, 5, 0, 15, 14, 2, 3, 12],
+                [13, 2, 8, 4, 6, 15, 11, 1, 10, 9, 3, 14, 5, 0, 12, 7, 1, 15, 13, 8, 10, 3, 7, 4, 12, 5, 6, 11, 0, 14, 9, 2, 7, 11, 4, 1, 9, 12, 14, 2, 0, 6, 10, 13, 15, 3, 5, 8, 2, 1, 14, 7, 4, 10, 8, 13, 15, 12, 9, 0, 3, 5, 6, 11]
+            ];
+            const PC1 = [57, 49, 41, 33, 25, 17, 9, 1, 58, 50, 42, 34, 26, 18, 10, 2, 59, 51, 43, 35, 27, 19, 11, 3, 60, 52, 44, 36, 63, 55, 47, 39, 31, 23, 15, 7, 62, 54, 46, 38, 30, 22, 14, 6, 61, 53, 45, 37, 29, 21, 13, 5, 28, 20, 12, 4];
+            const PC2 = [14, 17, 11, 24, 1, 5, 3, 28, 15, 6, 21, 10, 23, 19, 12, 4, 26, 8, 16, 7, 27, 20, 13, 2, 41, 52, 31, 37, 47, 55, 30, 40, 51, 45, 33, 48, 44, 49, 39, 56, 34, 53, 46, 42, 50, 36, 29, 32];
+            const SHIFTS = [1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1];
+
+            function permute(input, table, n) {
+                let output = 0n;
+                for (let i = 0; i < n; i++) {
+                    if ((input >> BigInt(64 - table[i])) & 1n) output |= (1n << BigInt(n - 1 - i));
+                }
+                return output;
+            }
+
+            function generateSubkeys(keyBytes) {
+                let key = 0n;
+                for (let i = 0; i < 8; i++) key = (key << 8n) | BigInt(keyBytes[i]);
+                let k56 = permute(key, PC1, 56);
+                let c = (k56 >> 28n) & 0xFFFFFFFn, d = k56 & 0xFFFFFFFn;
+                const subkeys = [];
+                for (let i = 0; i < 16; i++) {
+                    const shift = BigInt(SHIFTS[i]);
+                    c = ((c << shift) | (c >> (28n - shift))) & 0xFFFFFFFn;
+                    d = ((d << shift) | (d >> (28n - shift))) & 0xFFFFFFFn;
+                    subkeys.push(permute((c << 28n) | d, PC2, 48));
+                }
+                return subkeys;
+            }
+
+            function cryptBlock(block64, subkeys) {
+                let ip = permute(block64, IP, 64);
+                let l = (ip >> 32n) & 0xFFFFFFFFn, r = ip & 0xFFFFFFFFn;
+                for (let i = 0; i < 16; i++) {
+                    let tempR = r;
+                    let exp = permute(r, E, 48) ^ subkeys[i];
+                    let output = 0n;
+                    for (let j = 0; j < 8; j++) {
+                        const row = ((exp >> BigInt(47 - j * 6)) & 1n) << 1n | ((exp >> BigInt(42 - j * 6)) & 1n);
+                        const col = (exp >> BigInt(43 - j * 6)) & 0xFn;
+                        output = (output << 4n) | BigInt(S[j][Number(row * 16n + col)]);
+                    }
+                    r = l ^ permute(output, P, 32);
+                    l = tempR;
+                }
+                return permute((r << 32n) | l, FP, 64);
+            }
+
+            return {
+                encrypt: function (data, key) {
+                    const subkeys = generateSubkeys(key);
+                    const result = new Uint8Array(data.length);
+                    // ECB Mode: Loop 8 bytes at a time
+                    for (let i = 0; i < data.length; i += 8) {
+                        let block = 0n;
+                        for (let j = 0; j < 8; j++) block = (block << 8n) | BigInt(data[i + j] || 0);
+                        const encrypted = cryptBlock(block, subkeys);
+                        for (let j = 0; j < 8; j++) result[i + j] = Number((encrypted >> BigInt(56 - j * 8)) & 0xFFn);
+                    }
+                    return result;
+                }
+            };
+        })();
+
+        // ==========================================
+        // 1. PWA Service Worker 注册
+        // ==========================================
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                    }, err => {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+
+        // ==========================================
+        // 2. 加密逻辑 
+        // ==========================================
+        if (typeof CryptoJS === 'undefined') {
+            console.error("CryptoJS library not loaded!");
+            // 即使离线，因为 sw.js 缓存了库，所以这里通常不会报错
+        }
+
+        class ByteUtil {
+            static hexChars = "0123456789abcdef";
+            static byteToHex(b) {
+                return this.hexChars[(b >> 4) & 0x0F] + this.hexChars[b & 0x0F];
+            }
+            static bytesToHex(bytes) {
+                let result = "";
+                for (let i = 0; i < bytes.length; i++) {
+                    const octet = bytes[i];
+                    result += this.hexChars[(octet >> 4) & 0x0F];
+                    result += this.hexChars[octet & 0x0F];
+                }
+                return result;
+            }
+            static hexToBytes(hexString) {
+                if (!hexString || hexString.trim() === "") return new Uint8Array(0);
+                const result = new Uint8Array(hexString.length / 2);
+                for (let i = 0; i < hexString.length; i += 2) {
+                    result[i / 2] = parseInt(hexString.substring(i, i + 2), 16);
+                }
+                return result;
+            }
+        }
+
+        function encryptDES(data, key) {
+            try {
+                // 检查数据长度是否为8的倍数（DES块大小）
+                if (data.length % 8 !== 0) {
+                    console.error("Data length must be multiple of 8");
+                    return new Uint8Array(0);
+                }
+
+                // 确保 Key 是 8 字节
+                let keyBytes = new Uint8Array(8);
+                keyBytes.set(key.subarray(0, 8));
+
+                // 调用极简 DES 库
+                return MiniDES.encrypt(data, keyBytes);
+            } catch (e) {
+                console.error("Encryption error:", e);
+                return new Uint8Array(0);
+            }
+        }
+        
+        function wordArrayToUint8Array(wordArray) {
+            const length = wordArray.sigBytes;
+            const u8 = new Uint8Array(length);
+            const words = wordArray.words;
+            for (let i = 0; i < length; i++) {
+                u8[i] = (words[i >>> 2] >>> (24 - (i % 4) * 8)) & 0xff;
+            }
+            return u8;
+        }
+
+        function encryptData(inputData, headerData, keyString) {
+            const keyBytes = ByteUtil.hexToBytes(keyString);
+            const headerBytesSubset = new Uint8Array(4);
+            const encryptedBlock = new Uint8Array(8);
+            for (let i = 0; i < headerBytesSubset.length; i++) {
+                headerBytesSubset[i] = headerData[i + 2];
+            }
+            let sum = 0;
+            for (let i = 0; i < inputData.length; i++) {
+                sum += parseInt(ByteUtil.byteToHex(inputData[i]), 16);
+            }
+            for (let i = 0; i < keyBytes.length; i++) {
+                sum += parseInt(ByteUtil.byteToHex(keyBytes[i]), 16);
+            }
+            const sumBytes = new Uint8Array([sum & 255, (sum >> 8) & 255]);
+            let paddedLength = sumBytes.length + inputData.length;
+            if (paddedLength % 8 !== 0) {
+                paddedLength = Math.floor(paddedLength / 8 + 1) * 8;
+            }
+            const paddedData = new Uint8Array(paddedLength);
+            paddedData.set(sumBytes, 0);
+            paddedData.set(inputData, sumBytes.length);
+
+            const encryptedData = encryptDES(paddedData, keyBytes);
+            encryptedBlock.set(encryptedData.slice(0, 8));
+
+            const finalData = new Uint8Array(encryptedBlock.length + 12);
+            finalData[0] = 165;
+            finalData[1] = (encryptedBlock.length + 12) & 0xFF;
+            finalData[2] = 5;
+            finalData[3] = headerBytesSubset[0];
+            finalData[4] = headerBytesSubset[1];
+            finalData[5] = headerBytesSubset[2];
+            finalData[6] = headerBytesSubset[3];
+            finalData[7] = 0;
+            finalData[8] = 1;
+            finalData[9] = 7;
+            finalData.set(encryptedBlock, 10);
+            finalData[finalData.length - 2] = 0;
+            finalData[finalData.length - 1] = 90;
+            let checksum = 0;
+            for (let i = 0; i < finalData.length; i++) {
+                checksum += parseInt(ByteUtil.byteToHex(finalData[i]), 16);
+            }
+            finalData[finalData.length - 2] = (~checksum & 255);
+            return finalData;
+        }
+
+        // ==========================================
+        // 3. 蓝牙逻辑
+        // ==========================================
+        function validateMacAddress(macAddress) {
+            const regex = /^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/;
+            return regex.test(macAddress);
+        }
+
+        async function unlock(macAddress, keyStr) {
+            const spinner = document.getElementById('connectSpinner');
+            const btnText = document.getElementById('btnText');
+            let server;
+            spinner.classList.add('active');
+            btnText.textContent = "Wait...";
+
+            try {
+                if (!navigator.bluetooth) throw new Error("Web Bluetooth API not supported.");
+                if (!validateMacAddress(macAddress)) throw new Error("MAC address format error");
+
+                let options = {};
+                let namePrefix = localStorage.getItem("namePrefix");
+                if (namePrefix) options.filters = [{ 'namePrefix': namePrefix }];
+                else options.acceptAllDevices = true;
+
+                const device = await navigator.bluetooth.requestDevice(options);
+                server = await Promise.race([
+                    device.gatt.connect(),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error("Connection timeout")), 10000))
+                ]);
+
+                const service = await server.getPrimaryService('14839ac4-7d7e-415c-9a42-167340cf2339');
+                const characteristics = await service.getCharacteristics();
+                const readableChar = characteristics.find(c => c.properties.read);
+                const writableChar = characteristics.find(c => c.properties.write);
+                if (!readableChar || !writableChar) throw new Error("Required characteristics not found");
+
+                characteristics.forEach(async (c) => {
+                    if (c.properties.notify || c.properties.indicate) await c.startNotifications().catch(e => { });
+                });
+
+                const value = await readableChar.readValue();
+                const valueBytes = new Uint8Array(value.buffer);
+                const macBytes = macAddress.split(':').map(hex => parseInt(hex, 16));
+                const dataToWrite = encryptData(valueBytes, macBytes, keyStr);
+                await writableChar.writeValue(dataToWrite);
+
+                alert("Unlock Command Sent!");
+                localStorage.setItem("namePrefix", device.name);
+                document.getElementById('namePrefixInput').value = device.name;
+                checkInput(document.getElementById('namePrefixInput'));
+
+            } catch (error) {
+                console.error(error);
+                alert(`Failed: ${error.message}`);
+            } finally {
+                spinner.classList.remove('active');
+                btnText.textContent = "TEST";
+                if (server && server.connected) server.disconnect();
+            }
+        }
+
+        // ==========================================
+        // 4. UI Logic 
+        // ==========================================
+
+        function checkInput(input) {
+            if (input.value && input.value.trim() !== "") {
+                input.classList.add('has-value');
+            } else {
+                input.classList.remove('has-value');
+            }
+        }
+
+        function updateUrl(mac, key, name) {
+            const url = new URL(window.location);
+            url.searchParams.set('mac', mac);
+            url.searchParams.set('key', key);
+            if (name) url.searchParams.set('name', name);
+            window.history.pushState({}, '', url);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const configView = document.getElementById('configView');
+            const openView = document.getElementById('openView');
+            const toggleConfigBtn = document.getElementById('toggleConfigBtn');
+            const configForm = document.getElementById('configForm');
+            const macInput = document.getElementById('macInput');
+            const keyInput = document.getElementById('keyInput');
+            const namePrefixInput = document.getElementById('namePrefixInput');
+            const testBtn = document.getElementById('testBtn');
+
+            let showConfig = false;
+            let mac = "";
+            let key = "";
+            let namePrefix = "";
+
+            const params = new URLSearchParams(window.location.search);
+            const urlMac = params.get('mac');
+            const urlKey = params.get('key');
+            const urlName = params.get('name') || params.get('namePrefix');
+
+            if (urlMac) {
+                mac = urlMac;
+                localStorage.setItem("mac", mac);
+            } else {
+                mac = localStorage.getItem("mac") || "";
+            }
+
+            if (urlKey) {
+                key = urlKey;
+                localStorage.setItem("key", key);
+            } else {
+                key = localStorage.getItem("key") || "";
+            }
+
+            if (urlName) {
+                namePrefix = urlName;
+                localStorage.setItem("namePrefix", namePrefix);
+            } else {
+                namePrefix = localStorage.getItem("namePrefix") || "";
+            }
+
+            macInput.value = mac;
+            keyInput.value = key;
+            namePrefixInput.value = namePrefix || "";
+
+            [macInput, keyInput, namePrefixInput].forEach(checkInput);
+
+            showConfig = (mac && key) ? true : false;
+            render();
+
+            function render() {
+                if (showConfig) {
+                    configView.classList.add('hidden');
+                    openView.classList.remove('hidden');
+                } else {
+                    configView.classList.remove('hidden');
+                    openView.classList.add('hidden');
+                }
+            }
+
+            toggleConfigBtn.addEventListener('click', () => {
+                showConfig = !showConfig;
+                render();
+            });
+
+            [macInput, keyInput, namePrefixInput].forEach(input => {
+                input.addEventListener('input', (e) => checkInput(e.target));
+            });
+
+            configForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                mac = macInput.value;
+                key = keyInput.value;
+                namePrefix = namePrefixInput.value;
+
+                if (mac && key) {
+                    localStorage.setItem("mac", mac);
+                    localStorage.setItem("key", key);
+                    showConfig = true;
+                    render();
+                    updateUrl(mac, key, namePrefix);
+                }
+                localStorage.setItem("namePrefix", namePrefix);
+            });
+
+            testBtn.addEventListener('click', () => {
+                unlock(mac, key);
+            });
+        });
+    </script>
+</body>
+
+</html>
