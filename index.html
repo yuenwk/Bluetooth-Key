@@ -114,22 +114,51 @@
             font-size: 12px;
         }
 
-        button[type="submit"] {
-            background-color: #94d82d;
-            color: white;
-            padding: 12px 20px;
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            /* 按钮之间的间距 */
+            margin-top: 30px;
+        }
+
+        /* 通用按钮样式 */
+        .btn {
+            flex: 1;
+            /* 两个按钮平分宽度 */
+            padding: 10px 20px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
-            width: 100%;
             font-size: 16px;
-            margin-top: 20px;
             text-transform: uppercase;
             letter-spacing: 2px;
+            color: white;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        button[type="submit"]:hover {
+        .btn-save {
+            background-color: #94d82d;
+        }
+
+        .btn-save:hover {
             background-color: #69db7c;
+        }
+
+        .btn-share {
+            background-color: #4285f4;
+        }
+
+        .btn-share:hover {
+            background-color: #3367d6;
+        }
+
+        /* 复制成功后的提示样式 */
+        .btn-share.copied {
+            background-color: #333;
+            cursor: default;
         }
 
         .config {
@@ -295,9 +324,19 @@
                     <input type="text" id="namePrefixInput" required>
                     <label>Bluetooth Name</label>
                 </div>
-                <button type="submit">
-                    <span>Save</span>
-                </button>
+                <div class="btn-group">
+                    <button type="submit" class="btn btn-save">
+                        <span>Save</span>
+                    </button>
+                    <button type="button" id="shareBtn" class="btn btn-share" title="Copy Share URL">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;">
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                        </svg>
+                        <span>Share</span>
+                    </button>
+                </div>
             </form>
         </div>
 
@@ -455,7 +494,7 @@
                 return new Uint8Array(0);
             }
         }
-        
+
         function wordArrayToUint8Array(wordArray) {
             const length = wordArray.sigBytes;
             const u8 = new Uint8Array(length);
@@ -604,6 +643,7 @@
             const keyInput = document.getElementById('keyInput');
             const namePrefixInput = document.getElementById('namePrefixInput');
             const testBtn = document.getElementById('testBtn');
+            const shareBtn = document.getElementById('shareBtn');
 
             let showConfig = false;
             let mac = "";
@@ -662,6 +702,45 @@
 
             [macInput, keyInput, namePrefixInput].forEach(input => {
                 input.addEventListener('input', (e) => checkInput(e.target));
+            });
+
+            shareBtn.addEventListener('click', async () => {
+                const currentMac = macInput.value.trim();
+                const currentKey = keyInput.value.trim();
+                const currentName = namePrefixInput.value.trim();
+
+                if (!currentMac || !currentKey) {
+                    alert("Please enter MAC and Key first.");
+                    return;
+                }
+
+                // 构建带参数的 URL
+                const url = new URL(window.location.origin + window.location.pathname);
+                url.searchParams.set('mac', currentMac);
+                url.searchParams.set('key', currentKey);
+                if (currentName) {
+                    url.searchParams.set('name', currentName);
+                }
+
+                try {
+                    // 写入剪贴板
+                    await navigator.clipboard.writeText(url.toString());
+
+                    // 按钮反馈动画
+                    const originalHtml = shareBtn.innerHTML;
+                    shareBtn.innerHTML = `<span>Copied!</span>`;
+                    shareBtn.classList.add('copied');
+
+                    // 2秒后恢复
+                    setTimeout(() => {
+                        shareBtn.innerHTML = originalHtml;
+                        shareBtn.classList.remove('copied');
+                    }, 2000);
+
+                } catch (err) {
+                    console.error('Copy failed', err);
+                    alert('Failed to copy URL. Please copy from address bar manually after saving.');
+                }
             });
 
             configForm.addEventListener('submit', (e) => {
